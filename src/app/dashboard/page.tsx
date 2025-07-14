@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,8 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-const URLS_KEY = 'random-view-urls';
+import { getUrls, addUrl, deleteUrl } from '@/services/urlService';
 
 export default function DashboardPage() {
     const [urls, setUrls] = useState<string[]>([]);
@@ -17,32 +17,50 @@ export default function DashboardPage() {
     const { toast } = useToast();
 
     useEffect(() => {
+        async function fetchUrls() {
+            try {
+                const fetchedUrls = await getUrls();
+                setUrls(fetchedUrls);
+            } catch (error) {
+                console.error("Failed to fetch from Firestore", error);
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Could not load data from Firestore.",
+                });
+            } finally {
+                setIsStoreLoaded(true);
+            }
+        }
+        fetchUrls();
+    }, [toast]);
+
+    const handleAddUrl = async (url: string) => {
         try {
-            const storedUrls = localStorage.getItem(URLS_KEY);
-            setUrls(storedUrls ? JSON.parse(storedUrls) : []);
+            await addUrl(url);
+            setUrls(prevUrls => [...prevUrls, url]);
         } catch (error) {
-            console.error("Failed to parse from localStorage", error);
-            setUrls([]);
+             console.error("Failed to add URL", error);
+             toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to add the URL.",
+            });
+        }
+    };
+
+    const handleDeleteUrl = async (urlToDelete: string) => {
+        try {
+            await deleteUrl(urlToDelete);
+            setUrls(prevUrls => prevUrls.filter(url => url !== urlToDelete));
+        } catch(error) {
+            console.error("Failed to delete URL", error);
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Could not load data from your browser's storage.",
+                description: "Failed to delete the URL.",
             });
         }
-        setIsStoreLoaded(true);
-    }, [toast]);
-
-    const updateUrls = (newUrls: string[]) => {
-        setUrls(newUrls);
-        localStorage.setItem(URLS_KEY, JSON.stringify(newUrls));
-    };
-
-    const handleAddUrl = (url: string) => {
-        updateUrls([...urls, url]);
-    };
-
-    const handleDeleteUrl = (urlToDelete: string) => {
-        updateUrls(urls.filter(url => url !== urlToDelete));
     };
 
     return (
