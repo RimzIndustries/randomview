@@ -39,6 +39,10 @@ export default function DashboardPage() {
         try {
             await addUrl(url);
             setUrls(prevUrls => [...prevUrls, url]);
+            toast({
+                title: "URL Added",
+                description: "The new URL has been successfully added to your list.",
+            });
         } catch (error) {
              console.error("Failed to add URL", error);
              toast({
@@ -53,6 +57,11 @@ export default function DashboardPage() {
         try {
             await deleteUrl(urlToDelete);
             setUrls(prevUrls => prevUrls.filter(url => url !== urlToDelete));
+             toast({
+                variant: "default",
+                title: "URL Removed",
+                description: "The URL has been removed from your list."
+            });
         } catch(error) {
             console.error("Failed to delete URL", error);
             toast({
@@ -84,6 +93,8 @@ export default function DashboardPage() {
                         (!isStoreLoaded || urls.length === 0) && "pointer-events-none opacity-50"
                     )}
                     aria-disabled={!isStoreLoaded || urls.length === 0}
+                    target="_blank" 
+                    rel="noopener noreferrer"
                     >
                         <Eye className="mr-2 h-5 w-5" />
                         Start Viewing

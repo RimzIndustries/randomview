@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Trash2, Globe } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
 
 interface UrlManagerProps {
     urls: string[];
@@ -35,19 +34,10 @@ export function UrlManager({ urls, onAddUrl, onDeleteUrl, isLoaded }: UrlManager
         onAddUrl(result.data);
         setNewUrl('');
         setError(null);
-        toast({
-            title: "URL Added",
-            description: "The new URL has been successfully added to your list.",
-        });
     };
 
     const handleDelete = (urlToDelete: string) => {
         onDeleteUrl(urlToDelete);
-        toast({
-            variant: "default",
-            title: "URL Removed",
-            description: "The URL has been removed from your list."
-        });
     }
 
     return (

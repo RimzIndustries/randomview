@@ -57,7 +57,7 @@ export default function RandomPage() {
                     }
                 </p>
                 <Button asChild className="mt-6">
-                    <Link href="/dashboard">Go Back to Homepage</Link>
+                    <Link href="/dashboard">Go Back to Dashboard</Link>
                 </Button>
             </div>
         </div>
