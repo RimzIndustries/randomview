@@ -1,27 +1,28 @@
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, addDoc, query, where, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, addDoc, query, where, deleteDoc, collectionGroup } from 'firebase/firestore';
 
-const URLS_COLLECTION = 'urls';
+const USERS_COLLECTION = 'users';
+const URLS_SUBCOLLECTION = 'urls';
 
-// Get all URLs from the 'urls' collection
-export async function getUrls(): Promise<string[]> {
-    const urlsCollection = collection(db, URLS_COLLECTION);
-    const urlSnapshot = await getDocs(urlsCollection);
+// Get all URLs for a specific user
+export async function getUrls(userId: string): Promise<string[]> {
+    const urlsCollectionRef = collection(db, USERS_COLLECTION, userId, URLS_SUBCOLLECTION);
+    const urlSnapshot = await getDocs(urlsCollectionRef);
     const urlList = urlSnapshot.docs.map(doc => doc.data().url as string);
     return urlList;
 }
 
-// Add a new URL to the 'urls' collection
-export async function addUrl(url: string): Promise<void> {
-    const urlsCollection = collection(db, URLS_COLLECTION);
-    await addDoc(urlsCollection, { url });
+// Add a new URL to a user's list
+export async function addUrl(userId: string, url: string): Promise<void> {
+    const urlsCollectionRef = collection(db, USERS_COLLECTION, userId, URLS_SUBCOLLECTION);
+    await addDoc(urlsCollectionRef, { url });
 }
 
-// Delete a URL from the 'urls' collection
-export async function deleteUrl(urlToDelete: string): Promise<void> {
-    const urlsCollection = collection(db, URLS_COLLECTION);
-    const q = query(urlsCollection, where("url", "==", urlToDelete));
+// Delete a URL from a user's list
+export async function deleteUrl(userId: string, urlToDelete: string): Promise<void> {
+    const urlsCollectionRef = collection(db, USERS_COLLECTION, userId, URLS_SUBCOLLECTION);
+    const q = query(urlsCollectionRef, where("url", "==", urlToDelete));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
@@ -31,7 +32,8 @@ export async function deleteUrl(urlToDelete: string): Promise<void> {
 
     const deletePromises: Promise<void>[] = [];
     querySnapshot.forEach((document) => {
-        deletePromises.push(deleteDoc(doc(db, URLS_COLLECTION, document.id)));
+        const docRef = doc(db, USERS_COLLECTION, userId, URLS_SUBCOLLECTION, document.id);
+        deletePromises.push(deleteDoc(docRef));
     });
     
     await Promise.all(deletePromises);
