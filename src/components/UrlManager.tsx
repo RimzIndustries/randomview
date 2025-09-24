@@ -41,7 +41,7 @@ export function UrlManager({ urls, onAddUrl, onDeleteUrl, isLoaded }: UrlManager
     }
 
     return (
-        <Card className="w-full max-w-2xl shadow-lg border-2">
+        <Card className="w-full max-w-2xl neumorphism-card">
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2 text-2xl">
                     <Globe className="h-6 w-6" />
