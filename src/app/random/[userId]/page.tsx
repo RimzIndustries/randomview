@@ -1,70 +1,146 @@
-
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertTriangle } from 'lucide-react';
-import { getUrls } from '@/services/urlService';
+import { UrlManager } from '@/components/UrlManager';
+import { useToast } from "@/hooks/use-toast";
+import { Eye, LogOut, Shield } from 'lucide-react';
+import { getUrls, addUrl, deleteUrl } from '@/services/urlService';
+import { useRouter } from 'next/navigation';
 
-export default function RandomUserPage({ params }: { params: { userId: string } }) {
-    const { userId } = params;
-    const [status, setStatus] = useState<'loading' | 'redirecting' | 'no-urls' | 'error'>('loading');
+export default function DashboardPage() {
+    const { user, loading, logout, userRole } = useAuth();
+    const router = useRouter();
+    const [urls, setUrls] = useState<string[]>([]);
+    const [isStoreLoaded, setIsStoreLoaded] = useState(false);
+    const { toast } = useToast();
 
     useEffect(() => {
-        if (!userId) {
-            setStatus('error');
-            return;
+        if (!loading && !user) {
+            router.push('/login');
         }
+    }, [user, loading, router]);
 
-        const fetchAndRedirect = async () => {
-            try {
-                const urls = await getUrls(userId);
-
-                if (urls.length > 0) {
-                    setStatus('redirecting');
-                    const randomUrl = urls[Math.floor(Math.random() * urls.length)];
-                    window.location.href = randomUrl;
-                } else {
-                    setStatus('no-urls');
+    useEffect(() => {
+        async function fetchUrls() {
+            if (user?.uid) {
+                try {
+                    const fetchedUrls = await getUrls(user.uid);
+                    setUrls(fetchedUrls);
+                } catch (error) {
+                    console.error("Failed to fetch from Firestore", error);
+                    toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: "Could not load your URLs.",
+                    });
+                } finally {
+                    setIsStoreLoaded(true);
                 }
-            } catch (error) {
-                console.error("Failed to process URLs from Firestore", error);
-                setStatus('error');
             }
-        };
+        }
+        if (user) {
+            fetchUrls();
+        }
+    }, [user, toast]);
 
-        fetchAndRedirect();
-    }, [userId]);
+    const handleAddUrl = async (url: string) => {
+        if (!user?.uid) return;
+        try {
+            await addUrl(user.uid, url);
+            setUrls(prevUrls => [...prevUrls, url]);
+            toast({
+                title: "URL Added",
+                description: "The new URL has been successfully added to your list.",
+            });
+        } catch (error) {
+            console.error("Failed to add URL", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to add the URL.",
+            });
+        }
+    };
 
-    if (status === 'loading' || status === 'redirecting') {
+    const handleDeleteUrl = async (urlToDelete: string) => {
+        if (!user?.uid) return;
+        try {
+            await deleteUrl(user.uid, urlToDelete);
+            setUrls(prevUrls => prevUrls.filter(url => url !== urlToDelete));
+            toast({
+                variant: "default",
+                title: "URL Removed",
+                description: "The URL has been removed from your list."
+            });
+        } catch (error) {
+            console.error("Failed to delete URL", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to delete the URL.",
+            });
+        }
+    };
+    
+    const handleLogout = async () => {
+        await logout();
+        router.push('/login');
+    };
+
+    if (loading || !user) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-lg text-muted-foreground text-center">
-                    {status === 'loading' ? 'Finding a random website...' : 'Redirecting you...'}
-                </p>
+            <div className="flex justify-center items-center min-h-screen bg-background">
+                <p>Loading...</p>
             </div>
         );
     }
     
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
-            <div className="text-center">
-                <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
-                <h1 className="mt-4 text-2xl font-bold">
-                    {status === 'no-urls' ? 'No URLs Found' : 'An Error Occurred'}
-                </h1>
-                <p className="mt-2 text-muted-foreground">
-                    {status === 'no-urls' 
-                        ? "This user's list is empty."
-                        : "We couldn't load the URLs for this user. The link may be invalid."
-                    }
-                </p>
-                <Button asChild className="mt-6">
-                    <Link href="/dashboard">Go to Dashboard</Link>
-                </Button>
+        <main className="flex min-h-screen w-full flex-col items-center bg-background p-4 sm:p-8">
+            <div className="flex flex-col items-center gap-8 w-full max-w-4xl">
+                 <header className="text-center w-full">
+                    <div className="flex justify-between items-center w-full mb-4">
+                        <h1 className="text-2xl font-bold text-gray-700">
+                           Welcome, {user.displayName || user.email}!
+                        </h1>
+                        <div className="flex items-center gap-2">
+                            {userRole === 'admin' && (
+                                <Button asChild variant="ghost" className="neumorphism-button">
+                                    <Link href="/admin">
+                                        <Shield className="mr-2 h-5 w-5" />
+                                        Admin
+                                    </Link>
+                                </Button>
+                            )}
+                            <Button onClick={handleLogout} variant="ghost" className="neumorphism-button">
+                                <LogOut className="mr-2 h-5 w-5" />
+                                Logout
+                            </Button>
+                        </div>
+                    </div>
+                    <p className="text-lg text-gray-500">
+                        Manage your list of websites below.
+                    </p>
+                </header>
+
+                <UrlManager urls={urls} onAddUrl={handleAddUrl} onDeleteUrl={handleDeleteUrl} isLoaded={isStoreLoaded} />
+
+                <div className="w-full flex flex-col items-center gap-4 mt-4">
+                     <Button 
+                        asChild 
+                        size="lg" 
+                        className="neumorphism-button"
+                    >
+                        <Link href="/random">
+                            <Eye className="mr-2 h-5 w-5" />
+                            Start Viewing
+                        </Link>
+                    </Button>
+                </div>
             </div>
-        </div>
+        </main>
     );
 }

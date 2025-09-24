@@ -135,7 +135,7 @@ export default function DashboardPage() {
                         size="lg" 
                         className="neumorphism-button"
                     >
-                        <Link href={`/random`}>
+                        <Link href="/random">
                             <Eye className="mr-2 h-5 w-5" />
                             Start Viewing
                         </Link>
