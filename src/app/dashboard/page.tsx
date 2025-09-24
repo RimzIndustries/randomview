@@ -111,7 +111,7 @@ export default function DashboardPage() {
         router.push('/login');
     };
 
-    if (loading || !user) {
+    if (loading || !isStoreLoaded) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-8">
                 <div className="w-full max-w-4xl space-y-8">
@@ -138,7 +138,7 @@ export default function DashboardPage() {
                  <header className="w-full">
                     <div className="flex justify-between items-center w-full mb-2">
                         <h1 className="text-2xl font-bold text-foreground">
-                           Welcome, {user.displayName || user.email}!
+                           Welcome, {user?.displayName || user?.email}!
                         </h1>
                         <div className="flex items-center gap-2">
                             {userRole === 'admin' && (
