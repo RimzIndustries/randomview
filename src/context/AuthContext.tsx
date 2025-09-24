@@ -11,6 +11,8 @@ import {
     signOut,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+    deleteUser,
     AuthError
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, getFirestore } from 'firebase/firestore';
@@ -27,6 +29,8 @@ interface AuthContextType {
     signUpWithEmail: (email: string, pass: string) => Promise<Partial<AuthError>>;
     signInWithEmail: (email: string, pass: string) => Promise<Partial<AuthError>>;
     logout: () => Promise<void>;
+    resetPassword: (email: string) => Promise<void>;
+    deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -37,6 +41,8 @@ const AuthContext = createContext<AuthContextType>({
     signUpWithEmail: async () => ({}),
     signInWithEmail: async () => ({}),
     logout: async () => {},
+    resetPassword: async () => {},
+    deleteAccount: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -105,6 +111,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await signOut(auth);
     };
 
+    const resetPassword = async (email: string) => {
+        await sendPasswordResetEmail(auth, email);
+    };
+
+    const deleteAccount = async () => {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            await deleteUser(currentUser);
+        } else {
+            throw new Error("No user is currently signed in.");
+        }
+    };
+
     const value = {
         user,
         loading,
@@ -112,7 +131,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loginWithGoogle,
         signUpWithEmail,
         signInWithEmail,
-        logout
+        logout,
+        resetPassword,
+        deleteAccount
     };
 
     return (
