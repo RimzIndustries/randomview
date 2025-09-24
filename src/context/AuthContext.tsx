@@ -24,8 +24,8 @@ interface AuthContextType {
     loading: boolean;
     userRole: string | null;
     loginWithGoogle: () => Promise<void>;
-    signUpWithEmail: (email: string, pass: string) => Promise<User | AuthError>;
-    signInWithEmail: (email: string, pass: string) => Promise<User | AuthError>;
+    signUpWithEmail: (email: string, pass: string) => Promise<Partial<AuthError>>;
+    signInWithEmail: (email: string, pass: string) => Promise<Partial<AuthError>>;
     logout: () => Promise<void>;
 }
 
@@ -34,8 +34,8 @@ const AuthContext = createContext<AuthContextType>({
     loading: true,
     userRole: null,
     loginWithGoogle: async () => {},
-    signUpWithEmail: async () => new Promise(() => {}),
-    signInWithEmail: async () => new Promise(() => {}),
+    signUpWithEmail: async () => ({}),
+    signInWithEmail: async () => ({}),
     logout: async () => {},
 });
 
@@ -48,18 +48,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
                 setUser(user);
-                const userDocRef = doc(db, 'users', user.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists()) {
-                    setUserRole(userDoc.data().role);
-                } else {
-                    // Create user doc if it doesn't exist (e.g., first login)
-                    await setDoc(userDocRef, {
-                        email: user.email,
-                        role: 'user', // Default role
-                    });
-                    setUserRole('user');
-                }
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                setUserRole(userDoc.exists() ? userDoc.data().role : 'user');
             } else {
                 setUser(null);
                 setUserRole(null);
@@ -70,72 +60,64 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubscribe();
     }, []);
     
-    const handleUserCreation = async (user: User) => {
+    const handleUserDocument = async (user: User, role: string = 'user') => {
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (!userDoc.exists()) {
             await setDoc(userDocRef, {
                 email: user.email,
-                role: 'user',
+                role,
             });
-            setUserRole('user');
+            setUserRole(role);
         } else {
             setUserRole(userDoc.data().role);
         }
     }
 
     const loginWithGoogle = async () => {
-        setLoading(true);
         const provider = new GoogleAuthProvider();
-        try {
-            const result = await signInWithPopup(auth, provider);
-            await handleUserCreation(result.user);
-        } catch (error) {
-            console.error("Google login error", error);
-        } finally {
-            setLoading(false);
-        }
+        const result = await signInWithPopup(auth, provider);
+        await handleUserDocument(result.user);
     };
 
-    const signUpWithEmail = async (email: string, pass: string) => {
-        setLoading(true);
+    const signUpWithEmail = async (email: string, pass: string): Promise<Partial<AuthError>> => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-            await handleUserCreation(userCredential.user);
-            return userCredential.user;
+            await handleUserDocument(userCredential.user);
+            return {};
         } catch (error) {
-            return error as AuthError;
-        } finally {
-            setLoading(false);
+            const authError = error as AuthError;
+            return { code: authError.code, message: authError.message };
         }
     };
     
-    const signInWithEmail = async (email: string, pass: string) => {
-        setLoading(true);
+    const signInWithEmail = async (email: string, pass: string): Promise<Partial<AuthError>> => {
         try {
-             const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-             const userDocRef = doc(db, 'users', userCredential.user.uid);
-             const userDoc = await getDoc(userDocRef);
-             if (userDoc.exists()) {
-                setUserRole(userDoc.data().role);
-             }
-             return userCredential.user;
+             await signInWithEmailAndPassword(auth, email, pass);
+             return {};
         } catch (error) {
-            return error as AuthError;
-        } finally {
-            setLoading(false);
+            const authError = error as AuthError;
+            return { code: authError.code, message: authError.message };
         }
     };
 
     const logout = async () => {
         await signOut(auth);
-        setUser(null);
-        setUserRole(null);
+    };
+
+    const value = {
+        user,
+        loading,
+        userRole,
+        loginWithGoogle,
+        signUpWithEmail,
+        signInWithEmail,
+        logout
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, userRole, loginWithGoogle, signUpWithEmail, signInWithEmail, logout }}>
-            {children}
+        <AuthContext.Provider value={value}>
+            {!loading && children}
         </AuthContext.Provider>
     );
 };
