@@ -1,8 +1,9 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { getAllUrls } from '@/services/urlService';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle, Home, RefreshCw } from 'lucide-react';
@@ -13,33 +14,37 @@ export default function RandomViewPage() {
     const [currentUrl, setCurrentUrl] = useState<string | null>(null);
     const [status, setStatus] = useState<'loading' | 'viewing' | 'no-urls' | 'error'>('loading');
 
-    const pickRandomUrl = useCallback(() => {
+    const pickRandomUrl = () => {
         if (urls.length > 0) {
             const randomIndex = Math.floor(Math.random() * urls.length);
             setCurrentUrl(urls[randomIndex]);
             setStatus('viewing');
         } else {
+            // This case is handled by the initial fetch, but as a fallback
             setStatus('no-urls');
         }
-    }, [urls]);
+    };
 
     useEffect(() => {
-        async function fetchUrls() {
+        async function fetchAndSetUrls() {
+            setStatus('loading');
             try {
                 const fetchedUrls = await getAllUrls();
                 setUrls(fetchedUrls);
                 if (fetchedUrls.length === 0) {
                     setStatus('no-urls');
                 } else {
-                    pickRandomUrl();
+                    const randomIndex = Math.floor(Math.random() * fetchedUrls.length);
+                    setCurrentUrl(fetchedUrls[randomIndex]);
+                    setStatus('viewing');
                 }
             } catch (error) {
                 console.error("Failed to fetch all URLs", error);
                 setStatus('error');
             }
         }
-        fetchUrls();
-    }, [pickRandomUrl]);
+        fetchAndSetUrls();
+    }, []);
 
 
     if (status === 'loading') {
@@ -66,7 +71,7 @@ export default function RandomViewPage() {
                         }
                     </p>
                     <Button asChild className="mt-6">
-                        <a onClick={() => router.push('/dashboard')}>Go to Dashboard</a>
+                        <Link href="/dashboard">Go to Dashboard</Link>
                     </Button>
                 </div>
             </div>
@@ -76,9 +81,11 @@ export default function RandomViewPage() {
     return (
         <div className="flex flex-col h-screen bg-background">
             <header className="flex items-center justify-between p-4 border-b bg-card">
-                <Button variant="outline" onClick={() => router.push('/dashboard')}>
-                    <Home className="mr-2 h-4 w-4" />
-                    Go to App
+                <Button asChild variant="outline">
+                    <Link href="/dashboard">
+                        <Home className="mr-2 h-4 w-4" />
+                        Go to App
+                    </Link>
                 </Button>
                 <div className="text-sm text-muted-foreground truncate px-4 hidden sm:block">
                     Viewing a random site from the community!
