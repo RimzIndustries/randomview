@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { UrlManager } from '@/components/UrlManager';
 import { useToast } from "@/hooks/use-toast";
 import { Eye, LogOut, Shield } from 'lucide-react';
-import { getUrls, addUrl, deleteUrl } from '@/services/urlService';
+import { getUrls, addUrl, deleteUrl, updateUrl } from '@/services/urlService';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -86,6 +86,25 @@ export default function DashboardPage() {
             });
         }
     };
+
+    const handleUpdateUrl = async (oldUrl: string, newUrl: string) => {
+        if (!user?.uid) return;
+        try {
+            await updateUrl(user.uid, oldUrl, newUrl);
+            setUrls(prevUrls => prevUrls.map(url => (url === oldUrl ? newUrl : url)));
+            toast({
+                title: "URL Updated",
+                description: "The URL has been successfully updated.",
+            });
+        } catch (error) {
+            console.error("Failed to update URL", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to update the URL.",
+            });
+        }
+    }
     
     const handleLogout = async () => {
         await logout();
@@ -141,7 +160,13 @@ export default function DashboardPage() {
                     </p>
                 </header>
 
-                <UrlManager urls={urls} onAddUrl={handleAddUrl} onDeleteUrl={handleDeleteUrl} isLoaded={isStoreLoaded} />
+                <UrlManager 
+                    urls={urls} 
+                    onAddUrl={handleAddUrl} 
+                    onDeleteUrl={handleDeleteUrl} 
+                    onUpdateUrl={handleUpdateUrl}
+                    isLoaded={isStoreLoaded} 
+                />
 
                 <div className="w-full flex flex-col items-center gap-4 mt-4">
                      <Button 
@@ -149,7 +174,7 @@ export default function DashboardPage() {
                         size="lg" 
                         className="neumorphism-button"
                     >
-                        <Link href="/random" target="_blank" rel="noopener noreferrer">
+                        <Link href="/random">
                             <Eye className="mr-2 h-5 w-5" />
                             Start Viewing
                         </Link>

@@ -1,6 +1,6 @@
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, addDoc, query, where, deleteDoc, collectionGroup } from 'firebase/firestore';
+import { collection, getDocs, doc, addDoc, query, where, deleteDoc, collectionGroup, updateDoc, getDoc } from 'firebase/firestore';
 
 const USERS_COLLECTION = 'users';
 const URLS_SUBCOLLECTION = 'urls';
@@ -34,8 +34,7 @@ export async function deleteUrl(userId: string, urlToDelete: string): Promise<vo
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-        console.warn(`URL to delete not found: ${urlToDelete}`);
-        return;
+        throw new Error(`URL to delete not found: ${urlToDelete}`);
     }
 
     const deletePromises: Promise<void>[] = [];
@@ -45,4 +44,20 @@ export async function deleteUrl(userId: string, urlToDelete: string): Promise<vo
     });
     
     await Promise.all(deletePromises);
+}
+
+// Update a URL in a user's list
+export async function updateUrl(userId: string, oldUrl: string, newUrl: string): Promise<void> {
+    const urlsCollectionRef = collection(db, USERS_COLLECTION, userId, URLS_SUBCOLLECTION);
+    const q = query(urlsCollectionRef, where("url", "==", oldUrl));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+        throw new Error(`URL to update not found: ${oldUrl}`);
+    }
+    
+    // Assuming one URL matches, update it. If multiple, it updates the first one.
+    const docToUpdate = querySnapshot.docs[0];
+    const docRef = doc(db, USERS_COLLECTION, userId, URLS_SUBCOLLECTION, docToUpdate.id);
+    await updateDoc(docRef, { url: newUrl });
 }
