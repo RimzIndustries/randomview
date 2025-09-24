@@ -40,7 +40,7 @@ export async function deleteUrl(userId: string, urlToDelete: string): Promise<vo
 
     const deletePromises: Promise<void>[] = [];
     querySnapshot.forEach((document) => {
-        const docRef = doc(db, USERS_COLlection, userId, URLS_SUBCOLLECTION, document.id);
+        const docRef = doc(db, USERS_COLLECTION, userId, URLS_SUBCOLLECTION, document.id);
         deletePromises.push(deleteDoc(docRef));
     });
     
