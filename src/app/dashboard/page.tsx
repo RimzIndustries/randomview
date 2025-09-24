@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { UrlManager } from '@/components/UrlManager';
 import { useToast } from "@/hooks/use-toast";
-import { Eye, LogOut, Shield, Loader2 } from 'lucide-react';
+import { Eye, LogOut, Shield } from 'lucide-react';
 import { getUrls, addUrl, deleteUrl } from '@/services/urlService';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -149,7 +149,7 @@ export default function DashboardPage() {
                         size="lg" 
                         className="neumorphism-button"
                     >
-                        <Link href="/random">
+                        <Link href="/random" target="_blank" rel="noopener noreferrer">
                             <Eye className="mr-2 h-5 w-5" />
                             Start Viewing
                         </Link>
