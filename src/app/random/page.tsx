@@ -3,23 +3,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { getUrls } from '@/services/urlService';
+import { getAllUrls } from '@/services/urlService';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertTriangle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Loader2, AlertTriangle, Home, RefreshCw } from 'lucide-react';
 
 export default function RandomViewPage() {
-    const { user, loading } = useAuth();
     const router = useRouter();
     const [urls, setUrls] = useState<string[]>([]);
     const [currentUrl, setCurrentUrl] = useState<string | null>(null);
     const [status, setStatus] = useState<'loading' | 'viewing' | 'no-urls' | 'error'>('loading');
-
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
-        }
-    }, [user, loading, router]);
 
     const pickRandomUrl = useCallback(() => {
         if (urls.length > 0) {
@@ -33,35 +25,28 @@ export default function RandomViewPage() {
 
     useEffect(() => {
         async function fetchUrls() {
-            if (user?.uid) {
-                try {
-                    const fetchedUrls = await getUrls(user.uid);
-                    setUrls(fetchedUrls);
-                    if (fetchedUrls.length === 0) {
-                        setStatus('no-urls');
-                    }
-                } catch (error) {
-                    console.error("Failed to fetch URLs", error);
-                    setStatus('error');
+            try {
+                const fetchedUrls = await getAllUrls();
+                setUrls(fetchedUrls);
+                if (fetchedUrls.length === 0) {
+                    setStatus('no-urls');
+                } else {
+                    pickRandomUrl();
                 }
+            } catch (error) {
+                console.error("Failed to fetch all URLs", error);
+                setStatus('error');
             }
         }
-        if (user) {
-            fetchUrls();
-        }
-    }, [user]);
+        fetchUrls();
+    }, [pickRandomUrl]);
 
-    useEffect(() => {
-        if (status !== 'loading' && urls.length > 0) {
-            pickRandomUrl();
-        }
-    }, [urls, status, pickRandomUrl]);
 
-    if (loading || status === 'loading') {
+    if (status === 'loading') {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-lg text-muted-foreground">Loading your websites...</p>
+                <p className="mt-4 text-lg text-muted-foreground">Loading websites from all users...</p>
             </div>
         );
     }
@@ -76,8 +61,8 @@ export default function RandomViewPage() {
                     </h1>
                     <p className="mt-2 text-muted-foreground">
                         {status === 'no-urls' 
-                            ? "Your list is empty. Add some URLs on the dashboard."
-                            : "We couldn't load your URLs. Please try again later."
+                            ? "There are no websites submitted by any user yet."
+                            : "We couldn't load the websites. Please try again later."
                         }
                     </p>
                     <Button asChild className="mt-6">
@@ -92,11 +77,11 @@ export default function RandomViewPage() {
         <div className="flex flex-col h-screen bg-background">
             <header className="flex items-center justify-between p-4 border-b bg-card">
                 <Button variant="outline" onClick={() => router.push('/dashboard')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Dashboard
+                    <Home className="mr-2 h-4 w-4" />
+                    Go to App
                 </Button>
                 <div className="text-sm text-muted-foreground truncate px-4 hidden sm:block">
-                    Viewing: {currentUrl}
+                    Viewing a random site from the community!
                 </div>
                 <Button onClick={pickRandomUrl} className="neumorphism-button">
                     <RefreshCw className="mr-2 h-4 w-4" />

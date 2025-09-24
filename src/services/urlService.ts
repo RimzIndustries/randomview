@@ -13,6 +13,14 @@ export async function getUrls(userId: string): Promise<string[]> {
     return urlList;
 }
 
+// Get all URLs from all users
+export async function getAllUrls(): Promise<string[]> {
+    const urlsQuery = query(collectionGroup(db, URLS_SUBCOLLECTION));
+    const querySnapshot = await getDocs(urlsQuery);
+    const urlList = querySnapshot.docs.map(doc => doc.data().url as string);
+    return urlList;
+}
+
 // Add a new URL to a user's list
 export async function addUrl(userId: string, url: string): Promise<void> {
     const urlsCollectionRef = collection(db, USERS_COLLECTION, userId, URLS_SUBCOLLECTION);
@@ -32,7 +40,7 @@ export async function deleteUrl(userId: string, urlToDelete: string): Promise<vo
 
     const deletePromises: Promise<void>[] = [];
     querySnapshot.forEach((document) => {
-        const docRef = doc(db, USERS_COLLECTION, userId, URLS_SUBCOLLECTION, document.id);
+        const docRef = doc(db, USERS_COLlection, userId, URLS_SUBCOLLECTION, document.id);
         deletePromises.push(deleteDoc(docRef));
     });
     

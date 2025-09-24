@@ -134,11 +134,8 @@ export default function DashboardPage() {
                         asChild 
                         size="lg" 
                         className="neumorphism-button"
-                        disabled={!isStoreLoaded || urls.length === 0}
                     >
-                        <Link 
-                            href={`/random`} 
-                        >
+                        <Link href={`/random`}>
                             <Eye className="mr-2 h-5 w-5" />
                             Start Viewing
                         </Link>
