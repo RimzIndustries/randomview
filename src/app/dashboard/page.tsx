@@ -7,10 +7,19 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { UrlManager } from '@/components/UrlManager';
 import { useToast } from "@/hooks/use-toast";
-import { Eye, LogOut, Shield } from 'lucide-react';
+import { Eye, LogOut, Shield, User as UserIcon } from 'lucide-react';
 import { getUrls, addUrl, deleteUrl, updateUrl } from '@/services/urlService';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function DashboardPage() {
     const { user, loading, logout, userRole } = useAuth();
@@ -119,7 +128,7 @@ export default function DashboardPage() {
                         <Skeleton className="h-8 w-1/3" />
                         <div className="flex items-center gap-2">
                             <Skeleton className="h-10 w-24" />
-                            <Skeleton className="h-10 w-24" />
+                            <Skeleton className="h-10 w-10 rounded-full" />
                         </div>
                     </div>
                     <Skeleton className="h-6 w-1/2" />
@@ -138,7 +147,7 @@ export default function DashboardPage() {
                  <header className="w-full">
                     <div className="flex justify-between items-center w-full mb-2">
                         <h1 className="text-2xl font-bold text-foreground">
-                           Welcome, {user?.displayName || user?.email}!
+                           Welcome, {user?.displayName || user?.email?.split('@')[0]}!
                         </h1>
                         <div className="flex items-center gap-2">
                             {userRole === 'admin' && (
@@ -149,10 +158,35 @@ export default function DashboardPage() {
                                     </Link>
                                 </Button>
                             )}
-                            <Button onClick={handleLogout} variant="ghost" className="neumorphism-button">
-                                <LogOut className="mr-2 h-5 w-5" />
-                                Logout
-                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="relative h-10 w-10 rounded-full neumorphism-button">
+                                        <Avatar className="h-9 w-9">
+                                            <AvatarImage src={user?.photoURL ?? ""} alt={user?.displayName ?? ""} />
+                                            <AvatarFallback>
+                                                {user?.email?.charAt(0).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56" align="end" forceMount>
+                                    <DropdownMenuLabel className="font-normal">
+                                        <div className="flex flex-col space-y-1">
+                                            <p className="text-sm font-medium leading-none">
+                                                {user?.displayName || user?.email?.split('@')[0]}
+                                            </p>
+                                            <p className="text-xs leading-none text-muted-foreground">
+                                                {user?.email}
+                                            </p>
+                                        </div>
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={handleLogout}>
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span>Log out</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                     <p className="text-lg text-muted-foreground">
