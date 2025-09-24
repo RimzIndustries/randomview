@@ -105,7 +105,6 @@ export function UrlManager({ urls, onAddUrl, onDeleteUrl, onUpdateUrl, isLoaded 
                                 <ul aria-label="List of URLs">
                                     {urls.map((url) => (
                                         <li key={url} className="flex items-center justify-between p-2 rounded-md hover:bg-background transition-colors duration-200 group">
-                                            <span className="truncate font-mono text-sm" title={url}>{url}</span>
                                             <div className="flex items-center">
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
@@ -144,6 +143,7 @@ export function UrlManager({ urls, onAddUrl, onDeleteUrl, onUpdateUrl, isLoaded 
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
+                                                 <span className="truncate font-mono text-sm ml-2" title={url}>{url}</span>
                                             </div>
                                         </li>
                                     ))}
