@@ -137,9 +137,7 @@ export default function DashboardPage() {
                         disabled={!isStoreLoaded || urls.length === 0}
                     >
                         <Link 
-                            href={`/random/${user.uid}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
+                            href={`/random`} 
                         >
                             <Eye className="mr-2 h-5 w-5" />
                             Start Viewing
